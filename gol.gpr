@@ -1,0 +1,6 @@
+project GOL is
+
+   for Main use ("hello.adb");
+
+end GOL;
+
