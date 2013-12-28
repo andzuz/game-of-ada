@@ -1,5 +1,3 @@
-with Arrays2D; use Arrays2D;
-
 package body Gol_concurrent is
 
    --logika gry w zycie
@@ -13,15 +11,38 @@ package body Gol_concurrent is
    end Is_Alive;
 
    function Get_alive_neighbours_count
-     (board : Array2D;
-      I     : Integer;
-      J     : Integer)
-      return  Integer
+     (board            : Array2D;
+      I                : Integer;
+      J                : Integer;
+      is_by_left_edge  : Boolean := False;
+      is_by_right_edge : Boolean := False)
+      return             Integer
    is
-      alive_count : Integer := 0;
+      alive_count        : Integer := 0;
+      start_col, end_col : Integer;
    begin
+      --tu na podstawie flag ustale gorny i dolny zakres..
+      start_col := J - 1;
+      end_col   := J + 1;
+
+      if is_by_left_edge = True then
+         start_col   := start_col + 1;
+         alive_count := alive_count +
+                        Gol_concurrent.Get_edge_alive_neighbours_count
+                           (J - 1,
+                            I);
+      end if;
+
+      if is_by_right_edge = True then
+         end_col     := end_col - 1;
+         alive_count := alive_count +
+                        Gol_concurrent.Get_edge_alive_neighbours_count
+                           (J + 1,
+                            I);
+      end if;
+
       for X in I - 1 .. I + 1 loop
-         for Y in J - 1 .. J + 1 loop
+         for Y in start_col .. end_col loop
             if X /= I or Y /= J then
                if Is_Alive (board (X, Y)) then
                   alive_count := alive_count + 1;
@@ -30,8 +51,54 @@ package body Gol_concurrent is
          end loop;
       end loop;
 
+      --a tu dodam co trzeba..
+
       return alive_count;
    end Get_alive_neighbours_count;
+
+   function Get_edge_alive_neighbours_count
+     (col_num : Integer;
+      row_num : Integer)
+      return    Integer
+   is
+      column      : Array2D (1 .. MAX_SIZE, 1 .. 1);
+      alive_count : Integer := 0;
+   begin
+      Gol_concurrent.shared_gameboard.Get_specific_column (column, col_num);
+
+      for I in row_num - 1 .. row_num + 1 loop
+
+         if I >= 1 and I <= MAX_SIZE then
+            if Gol_concurrent.Is_Alive (column (I, 1)) then
+               alive_count := alive_count + 1;
+            end if;
+         end if;
+
+      end loop;
+
+      return alive_count;
+   end Get_edge_alive_neighbours_count;
+
+   --regula conwaya
+   --martwa ma 3 zywych to sie rodzi
+   --zywa z 2 albo 3 zywymi nadal zywa, przeciwnym wypadku martwa
+   function Get_updated_cell_state
+     (cell_state       : Float;
+      alive_neighbours : Integer)
+      return             Float
+   is
+   begin
+      if cell_state = 0.0 and alive_neighbours = 3 then
+         return 1.0;
+      end if;
+      if cell_state = 1.0 and
+         (alive_neighbours = 3 or alive_neighbours = 2)
+      then
+         return 1.0;
+      end if;
+
+      return 0.0;
+   end Get_updated_cell_state;
 
    -- WORKER
    ----------------------------------------------------------------------
@@ -85,7 +152,6 @@ package body Gol_concurrent is
    task body Supervisor is
       workers                 : array (1 .. NUMBER_OF_WORKERS) of Worker;
       current_iteration_board : Array2D (1 .. MAX_SIZE, 1 .. MAX_SIZE);
-      shared_gameboard        : Shared_board;
       --tmp:
       column : Array2D (1 .. MAX_SIZE, 1 .. 1);
    begin
@@ -97,12 +163,15 @@ package body Gol_concurrent is
 
          shared_gameboard.Get (current_iteration_board);
          Put_Line
-           ("Alive neighbours for 2 2 " &
+           ("Alive edge: " &
             Integer'Image
                (Gol_concurrent.Get_alive_neighbours_count
                    (current_iteration_board,
                     2,
-                    2)));
+                    2,
+                    False,
+                    True)));
+
          --tmp:
          --shared_gameboard.Get_specific_column(column, 1);
          --Put_Line("Column 1st:");

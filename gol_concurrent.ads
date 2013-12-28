@@ -10,10 +10,20 @@ package Gol_concurrent is
 
    function Is_Alive (cell : Float) return Boolean;
    function Get_alive_neighbours_count
-     (board : Array2D;
-      I     : Integer;
-      J     : Integer)
-      return  Integer;
+     (board            : Array2D;
+      I                : Integer;
+      J                : Integer;
+      is_by_left_edge  : Boolean := False;
+      is_by_right_edge : Boolean := False)
+      return             Integer;
+   function Get_updated_cell_state
+     (cell_state       : Float;
+      alive_neighbours : Integer)
+      return             Float;
+   function Get_edge_alive_neighbours_count
+     (col_num : Integer;
+      row_num : Integer)
+      return    Integer;
 
    protected type Shared_board is
       procedure Set (a_board : Array2D);
@@ -24,6 +34,8 @@ package Gol_concurrent is
    private
       board : Array2D (1 .. MAX_SIZE, 1 .. MAX_SIZE);
    end Shared_board;
+
+   shared_gameboard : Shared_board;
 
    task type Worker is
       entry fill_board_part
