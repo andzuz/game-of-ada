@@ -10,6 +10,13 @@ package Gol_concurrent is
   IN_FILENAME : String := "matrix.txt";
   OUT_FILENAME : String := "matrix_out.txt";
 
+  protected type Shared_board is
+    procedure Set(a_board : Array2D);
+    procedure Get(a_board : out Array2D);
+  private
+    board : Array2D(1..MAX_SIZE, 1..MAX_SIZE);
+  end Shared_board;
+
   task type Worker is
     entry fill_board_part(board : Array2D; column_from : Integer; column_to : Integer; current_worker_number : Integer);
     entry process_data;
