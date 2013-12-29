@@ -27,7 +27,7 @@ package body Gol_concurrent is
 
       if is_by_left_edge = True then
          start_col   := start_col + 1;
-         alive_count := alive_count +
+         alive_count := alive_count + --(-10);
                         Gol_concurrent.Get_edge_alive_neighbours_count
                            (J - 1,
                             I);
@@ -35,7 +35,7 @@ package body Gol_concurrent is
 
       if is_by_right_edge = True then
          end_col     := end_col - 1;
-         alive_count := alive_count +
+         alive_count := alive_count + --666;
                         Gol_concurrent.Get_edge_alive_neighbours_count
                            (J + 1,
                             I);
@@ -43,15 +43,13 @@ package body Gol_concurrent is
 
       for X in I - 1 .. I + 1 loop
          for Y in start_col .. end_col loop
-            if X /= I or Y /= J then
+            if (X /= I or Y /= J) and (X >= 1 and X <= MAX_SIZE) then
                if Is_Alive (board (X, Y)) then
                   alive_count := alive_count + 1;
                end if;
             end if;
          end loop;
       end loop;
-
-      --a tu dodam co trzeba..
 
       return alive_count;
    end Get_alive_neighbours_count;
@@ -63,11 +61,11 @@ package body Gol_concurrent is
    is
       column      : Array2D (1 .. MAX_SIZE, 1 .. 1);
       alive_count : Integer := 0;
+      result : Boolean;
    begin
-      Gol_concurrent.shared_gameboard.Get_specific_column (column, col_num);
+      --result := Gol_concurrent.shared_gameboard.Get_specific_column (column, col_num);
 
       for I in row_num - 1 .. row_num + 1 loop
-
          if I >= 1 and I <= MAX_SIZE then
             if Gol_concurrent.Is_Alive (column (I, 1)) then
                alive_count := alive_count + 1;
@@ -103,10 +101,13 @@ package body Gol_concurrent is
    -- WORKER
    ----------------------------------------------------------------------
    task body Worker is
-      local_board_copy   : Array2D (1 .. MAX_SIZE, 1 .. MAX_SIZE / 2);
-      column_start_range : Integer;
-      column_end_range   : Integer;
-      worker_number      : Integer;
+      local_board_copy     : Array2D (1 .. MAX_SIZE, 1 .. MAX_SIZE / 2);
+      next_iteration_board : Array2D (1 .. MAX_SIZE, 1 .. MAX_SIZE / 2);
+      column_start_range   : Integer;
+      column_end_range     : Integer;
+      worker_number        : Integer;
+      alive_tmp            : Integer;
+      cell_state_tmp       : Float;
    begin
 
       loop
@@ -118,8 +119,6 @@ package body Gol_concurrent is
             column_start_range := column_from;
             column_end_range   := column_to;
             worker_number      := current_worker_number;
-
-            Put_Line (Integer'Image (column_from));
 
             for I in 1 .. MAX_SIZE loop
                for J in column_from .. column_to loop
@@ -133,14 +132,46 @@ package body Gol_concurrent is
 
          -- processing tablicy
          accept process_data;
-         for I in local_board_copy'Range (1) loop
-            for J in local_board_copy'Range (2) loop
-               local_board_copy (I, J) := local_board_copy (I, J) * 3.0;
+
+         for I in 1 .. local_board_copy'Length (1) loop
+            for J in 1 .. local_board_copy'Length (2) loop
+               next_iteration_board (I, J) := local_board_copy (I, J) * 3.0;
+
+	       --na lewej krawedzi
+               if J = 1 then
+                 if MAX_SIZE / NUMBER_OF_WORKERS * (worker_number - 1) /= 0 then
+		   alive_tmp := Gol_concurrent.Get_alive_neighbours_count(local_board_copy, I, J, True, False);
+                 else
+                   alive_tmp := -1;
+                 end if;
+               end if;
+
+               --na prawej krawedzi
+               if J = local_board_copy'Length (2) then
+                 if MAX_SIZE / NUMBER_OF_WORKERS * worker_number + 1 < MAX_SIZE then
+		   alive_tmp := Gol_concurrent.Get_alive_neighbours_count(local_board_copy, I, J, False, True);
+                 else
+                   alive_tmp := 666;
+                 end if;
+               end if;
+
+               Put_Line
+                 ("(" &
+                  Integer'Image (I) &
+                  "," &
+                  Integer'Image (J) &
+                  " is " &
+                  Float'Image (local_board_copy (I, J)) &
+                  " and has " &
+                  Integer'Image (alive_tmp) &
+                  " alive nbs on worker " &
+                  Integer'Image (worker_number));
+
             end loop;
          end loop;
 
          Supervisor.on_data_returned
-           (local_board_copy,
+           (next_iteration_board,
             column_start_range,
             column_end_range,
             worker_number);
@@ -162,15 +193,10 @@ package body Gol_concurrent is
       for I in 1 .. 1 loop
 
          shared_gameboard.Get (current_iteration_board);
-         Put_Line
-           ("Alive edge: " &
-            Integer'Image
-               (Gol_concurrent.Get_alive_neighbours_count
-                   (current_iteration_board,
-                    2,
-                    2,
-                    False,
-                    True)));
+         Arrays2D.Print_array
+           (current_iteration_board,
+            current_iteration_board'Length (1),
+            current_iteration_board'Length (2));
 
          --tmp:
          --shared_gameboard.Get_specific_column(column, 1);
@@ -229,9 +255,10 @@ package body Gol_concurrent is
          a_board := board;
       end Get;
 
-      procedure Get_specific_column
+      function Get_specific_column
         (column  : out Array2D;
          col_num : Integer)
+      return Boolean
       is
          col : Array2D (1 .. MAX_SIZE, 1 .. 1);
       begin
@@ -240,6 +267,8 @@ package body Gol_concurrent is
          end loop;
 
          column := col;
+
+         return True;
       end Get_specific_column;
    end Shared_board;
 

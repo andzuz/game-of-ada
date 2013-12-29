@@ -28,9 +28,10 @@ package Gol_concurrent is
    protected type Shared_board is
       procedure Set (a_board : Array2D);
       procedure Get (a_board : out Array2D);
-      procedure Get_specific_column
+      function Get_specific_column
         (column  : out Array2D;
-         col_num : Integer);
+         col_num : Integer)
+      return Boolean;
    private
       board : Array2D (1 .. MAX_SIZE, 1 .. MAX_SIZE);
    end Shared_board;
