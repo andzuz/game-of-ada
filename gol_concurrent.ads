@@ -8,9 +8,15 @@ package Gol_concurrent is
    IN_FILENAME       : String  := "matrix.txt";
    OUT_FILENAME      : String  := "matrix_out.txt";
 
+   procedure Get_specific_column
+     (board   : Array2D;
+      column  : out Array2D;
+      col_num : Integer);
    function Is_Alive (cell : Float) return Boolean;
    function Get_alive_neighbours_count
-     (board            : Array2D;
+     (whole_board      : Array2D;
+      worker_number    : Integer;
+      board            : Array2D;
       I                : Integer;
       J                : Integer;
       is_by_left_edge  : Boolean := False;
@@ -21,22 +27,10 @@ package Gol_concurrent is
       alive_neighbours : Integer)
       return             Float;
    function Get_edge_alive_neighbours_count
-     (col_num : Integer;
-      row_num : Integer)
-      return    Integer;
-
-   protected type Shared_board is
-      procedure Set (a_board : Array2D);
-      procedure Get (a_board : out Array2D);
-      function Get_specific_column
-        (column  : out Array2D;
-         col_num : Integer)
-      return Boolean;
-   private
-      board : Array2D (1 .. MAX_SIZE, 1 .. MAX_SIZE);
-   end Shared_board;
-
-   shared_gameboard : Shared_board;
+     (whole_board : Array2D;
+      col_num     : Integer;
+      row_num     : Integer)
+      return        Integer;
 
    task type Worker is
       entry fill_board_part
