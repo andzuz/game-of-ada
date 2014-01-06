@@ -38,13 +38,13 @@ package body Arrays2D is
    begin
       Open (File, In_File, Filename);
 
+
       for X in 1 .. I loop
          for Y in 1 .. J loop
-            Temp_float          := Float'Value (Get_Line (File));
-            Result_array (X, Y) := Temp_float;
+             Temp_float          := Float'Value (Get_Line (File));
+             Result_array (X, Y) := Temp_float;
          end loop;
       end loop;
-
       Close (File);
       return Result_array;
    end Get_array_from_file;

@@ -1,47 +1,38 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Arrays2D;    use Arrays2D;
+with Gol_logic;   use Gol_logic;
 
+-- pakiet przechowujacy logike Workerow i Supervisora
 package Gol_concurrent is
 
-   MAX_SIZE          : Integer := 4;
+   -- rozmiar boku planszy
+   MAX_SIZE          : Integer := 6;
+   -- ilosc workerow, musi byc calkowitym dodatnim dzielnikiem boku planszy
    NUMBER_OF_WORKERS : Integer := 2;
+   -- nazwa pliku odczytu macierzy
    IN_FILENAME       : String  := "matrix.txt";
+   -- -||- zapisu
    OUT_FILENAME      : String  := "matrix_out.txt";
-
-   procedure Get_specific_column
-     (board   : Array2D;
-      column  : out Array2D;
-      col_num : Integer);
-   function Is_Alive (cell : Float) return Boolean;
-   function Get_alive_neighbours_count
-     (whole_board      : Array2D;
-      worker_number    : Integer;
-      board            : Array2D;
-      I                : Integer;
-      J                : Integer;
-      is_by_left_edge  : Boolean := False;
-      is_by_right_edge : Boolean := False)
-      return             Integer;
-   function Get_updated_cell_state
-     (cell_state       : Float;
-      alive_neighbours : Integer)
-      return             Float;
-   function Get_edge_alive_neighbours_count
-     (whole_board : Array2D;
-      col_num     : Integer;
-      row_num     : Integer)
-      return        Integer;
+   -- ilosc iteracji Gry
+   ITERATIONS        : Integer := 4;
 
    task type Worker is
+      -- entry sluzy do wypelnienia czastki calej tablicy - kazdy worker ma
+      -- lokalna kopie swojej czesci
       entry fill_board_part
         (board                 : Array2D;
          column_from           : Integer;
          column_to             : Integer;
          current_worker_number : Integer);
+
+      -- entry sluzy do uruchomienia mechanizmu przetwarzania czesci tablicy
       entry process_data;
    end Worker;
 
    task Supervisor is
+      -- entry sluzy do poskladania danych. Wywoluja je workery gdy odsylaja
+      -- swoje przetworzone czastki. Wtedy do calej tablicy w supervisorze
+      -- wpisywane sa te czastki w odpowiednich miejscach
       entry on_data_returned
         (data                  : Array2D;
          start_range           : Integer;
