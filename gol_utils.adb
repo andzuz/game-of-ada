@@ -90,7 +90,6 @@ package body Gol_utils is
      while not End_of_file(File) loop
        Get(File, Char);
        if Char /= ASCII.LF and Char /= ASCII.CR and Char /= ' ' then
-         --Put_Line("__" & Char & "__");
          str(1) := Char;
          Result_arr(I,J) := Float'Value(str);
 
