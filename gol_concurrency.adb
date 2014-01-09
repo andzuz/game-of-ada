@@ -13,7 +13,7 @@ package body Gol_concurrency is
 
     Put_Line("Nadzorca: Odebrano sygnal startu");
 
-    tmp_board := Get_array_from_file(FILE_IN_NAME, MAX_SIZE, MAX_SIZE);
+    tmp_board := Get_GOL_board_from_file(FILE_IN_NAME, MAX_SIZE);
     MAX_SIZE := MAX_SIZE + 2;
     Fill_edges_with_zeros(tmp_board, supervisor_board, MAX_SIZE);
 
@@ -55,7 +55,7 @@ package body Gol_concurrency is
     end loop;
 
     Put_Line("Nadzorca: Zapisywanie tablicy do pliku..");
-    Write_array_to_file(supervisor_board, FILE_OUT_NAME, MAX_SIZE, MAX_SIZE);
+    Write_GOL_board_to_file(supervisor_board, FILE_OUT_NAME, MAX_SIZE);
   end Supervisor;
 
   task body Worker_task is

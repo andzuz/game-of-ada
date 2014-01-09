@@ -61,4 +61,52 @@ package body Gol_utils is
     board := result_board;
   end Apply_gol_logic_to_board;
 
+  procedure Write_GOL_board_to_file(arr : Array2D; Filename : String; size : Integer) is
+     File : File_Type;
+   begin
+     Create (File, Out_File, Filename);
+
+     for X in 1 .. size loop
+         for Y in 1 .. size loop
+            Put (File, Integer'Image (Integer'Val(Integer(arr (X, Y)))));
+            Put (File, " ");
+         end loop;
+         Put (File, ASCII.LF);
+      end loop;
+
+     Close (File);
+   end Write_GOL_board_to_file;
+
+   function Get_GOL_board_from_file(Filename: String; size : Integer) return Array2D is
+     File         : File_Type;
+     Char         : Character;
+     Result_arr   : Array2D(1..size,1..size);
+     I            : Integer := 1;
+     J            : Integer := 1;
+     str          : String(1..1);
+   begin
+     Open (File, In_File, Filename);
+
+     while not End_of_file(File) loop
+       Get(File, Char);
+       if Char /= ASCII.LF and Char /= ASCII.CR and Char /= ' ' then
+         --Put_Line("__" & Char & "__");
+         str(1) := Char;
+         Result_arr(I,J) := Float'Value(str);
+
+         J := J + 1;
+
+         if J > size then
+           J := 1;
+           I := I + 1;
+           exit when I > size;
+         end if;
+       end if;
+     end loop;
+
+     Close (File);
+
+     return Result_arr;
+   end Get_GOL_board_from_file;
+
 end Gol_utils;
